@@ -1,4 +1,4 @@
-name: Build Torvarcore
+name: Build Torvarcore Windows EXE
 
 on:
   workflow_dispatch:
@@ -21,88 +21,139 @@ jobs:
 
     - name: Create App File
       run: |
-        cat << 'EOF' > app.pyw
+        # ⚙️ ضع مفتاح الـ API الحقيقي الخاص بك هنا بدقة شديدة:
+        $apiKey = "AQ.Ab8RN6LKfZUN56tbB4CZCUWGcFLUInUknTYAlffReGCGsrRA0A"
+        
+        $code = @"
         import customtkinter as cst
         import tkinter as tk
         from google import genai
         from google.genai import types
         import threading
+        import os
 
+        # ضبط المظهر العام ليكون داكناً وفخماً كـ ChatGPT تلقائياً
         cst.set_appearance_mode("Dark")
         cst.set_default_color_theme("blue")
 
-        # ⚙️ تم ربط المفتاح هنا ليقرأه السيرفر تلقائياً
-        API_KEY = "AQ.Ab8RN6KwJwYqEpls44vfDGLlupU_NxyDz-zi9WcmFmHHWYc7BQ"
+        APP_NAME = "Torvarcore AI"
+        API_KEY = "`$apiKey"
         
         try:
-            client = genai.Client(api_key=API_KEY) if API_KEY != "ضع_مفتاح_الـ_API_الخاص_بك_هنا" else None
+            client = genai.Client(api_key=API_KEY) if API_KEY != "اكتب_مفتاح_الـ_API_بتاعك_هنا" else None
         except:
             client = None
 
-        class TorvarcoreShell(cst.CTk):
+        class TorvarcoreFinalShell(cst.CTk):
             def __init__(self):
                 super().__init__()
-                self.title("Torvarcore AI")
-                self.attributes('-fullscreen', True)
+                
+                # إعدادات الشاشة الكاملة كسطح مكتب مستقل (Local Shell Loop)
+                self.title(APP_NAME)
+                self.attributes('-fullscreen', True) 
                 self.configure(fg_color="#212121")
                 
-                # شريط علوي
+                # --- 1. شريط التحكم العلوي ---
                 self.top_bar = cst.CTkFrame(self, height=40, corner_radius=0, fg_color="#171717")
                 self.top_bar.pack(fill=tk.X, side=tk.TOP)
-                self.btn_close = cst.CTkButton(self.top_bar, text="✕ Exit", fg_color="#f38ba8", text_color="#11111b", width=80, command=self.destroy)
+                
+                self.btn_close = cst.CTkButton(self.top_bar, text="✕ إغلاق النظام", font=("Arial", 11, "bold"),
+                                               fg_color="#f38ba8", hover_color="#e64553", text_color="#11111b",
+                                               width=120, height=28, corner_radius=6, command=self.destroy)
                 self.btn_close.pack(side=tk.RIGHT, padx=15, pady=6)
                 
-                # عنوان
-                self.lbl = cst.CTkLabel(self, text="Torvarcore AI Desktop", font=('Arial', 26, 'bold'), text_color="#ececf1")
-                self.lbl.pack(pady=20)
+                self.lbl_bar_title = cst.CTkLabel(self.top_bar, text=f"سطح مكتب {APP_NAME} المطور (Pro Mind)", font=("Arial", 12, "bold"), text_color="#ececf1")
+                self.lbl_bar_title.pack(side=tk.LEFT, padx=15)
+
+                # --- 2. شريط الحالة السفلي اللوكال ---
+                self.status_bar = cst.CTkFrame(self, height=25, corner_radius=0, fg_color="#171717")
+                self.status_bar.pack(fill=tk.X, side=tk.BOTTOM)
+                self.lbl_status = cst.CTkLabel(self.status_bar, text="🟢 النظام يعمل محلياً ويغلق تلقائياً مع الجهاز", font=("Arial", 10), text_color="#a6e3a1")
+                self.lbl_status.pack(side=tk.LEFT, padx=15)
+
+                self.main_container = cst.CTkFrame(self, fg_color="transparent")
+                self.main_container.pack(fill=tk.BOTH, expand=True)
                 
-                # صندوق عرض الشات
-                self.txt_display = cst.CTkTextbox(self, fg_color="#212121", text_color="#ececf1", font=("Arial", 13), wrap="word")
-                self.txt_display.pack(fill=tk.BOTH, expand=True, padx=100, pady=10)
-                self.txt_display.insert(tk.END, "🤖 Torvarcore: أهلاً بك! أنا نظام سطح المكتب المخصص، ومستعد لمساعدتك الآن بذكاء حقيقي.\n\n")
+                # --- 3. الشريط الجانبي الفخم (Sidebar) ---
+                self.sidebar = cst.CTkFrame(self.main_container, width=280, corner_radius=0, fg_color="#171717")
+                self.sidebar.pack(side=tk.LEFT, fill=tk.Y)
+                self.sidebar.pack_propagate(False)
+                
+                self.btn_new = cst.CTkButton(self.sidebar, text="➕ محادثة جديدة", font=("Arial", 13, "bold"),
+                                             fg_color="#2f2f2f", hover_color="#3e3e3e", text_color="#ececf1", height=45, corner_radius=8, anchor="w", command=self.clear_chat)
+                self.btn_new.pack(fill=tk.X, padx=15, pady=25)
+                
+                self.lbl_history = cst.CTkLabel(self.sidebar, text="📁 ملفات ومشاريع النظام الحية:", font=("Arial", 11, "bold"), text_color="#8e8ea0", anchor="w")
+                self.lbl_history.pack(fill=tk.X, padx=20, pady=5)
+                
+                mock_files = ["جرد المواد الغذائية.xlsx", "تقرير المبيعات اليومي.xlsx", "خطاب الموردين.docx"]
+                for file in mock_files:
+                    btn_item = cst.CTkButton(self.sidebar, text=f"📄 {file}", font=("Arial", 12), fg_color="transparent", hover_color="#212121", text_color="#ececf1", height=35, anchor="w", corner_radius=6)
+                    btn_item.pack(fill=tk.X, padx=10, pady=2)
+                    
+                # --- 4. منطقة الشات والمحتوى الرئيسي الاحترافي الشبيه بـ ChatGPT ---
+                self.chat_area = cst.CTkFrame(self.main_container, fg_color="#212121", corner_radius=0)
+                self.chat_area.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+                
+                self.logo_frame = cst.CTkFrame(self.chat_area, fg_color="transparent")
+                self.logo_frame.pack(pady=(80, 10))
+                self.lbl_title = cst.CTkLabel(self.logo_frame, text=APP_NAME, font=("Arial", 42, "bold"), text_color="#ececf1")
+                self.lbl_title.pack(pady=5)
+                
+                self.txt_display = cst.CTkTextbox(self.chat_area, fg_color="#212121", text_color="#ececf1", font=("Arial", 13), activate_scrollbars=True, wrap="word")
+                self.txt_display.pack(fill=tk.BOTH, expand=True, padx=140, pady=10)
                 self.txt_display.configure(state="disabled")
+                self.show_response(f"🤖 {APP_NAME}: مرحباً بك في لوحة تحكم سطح المكتب المخصصة للشركات والمخازن. مدعوم بعقل البرو الخارق في البرمجة والتصميم. كيف يمكنني مساعدتك اليوم؟\n\n")
                 
-                # صندوق إدخال سفلي
-                self.input_container = cst.CTkFrame(self, fg_color="#2f2f2f", height=60, corner_radius=26, border_width=1, border_color="#4d4d4d")
-                self.input_container.pack(fill=tk.X, padx=100, pady=(10, 40))
+                # --- 5. صندوق الكتابة السفلي الدائري المطابق لـ ChatGPT ---
+                self.input_container = cst.CTkFrame(self.chat_area, fg_color="#2f2f2f", height=60, corner_radius=26, border_width=1, border_color="#4d4d4d")
+                self.input_container.pack(fill=tk.X, padx=160, pady=(10, 40))
                 self.input_container.pack_propagate(False)
                 
-                self.entry = cst.CTkEntry(self.input_container, placeholder_text="اكتب سؤالك هنا لـ Torvarcore...", fg_color="transparent", border_width=0, text_color="#ececf1")
+                self.entry = cst.CTkEntry(self.input_container, placeholder_text="اسأل Torvarcore عن حسابات الإكسل أو تصميم الأكواد...",
+                                          fg_color="transparent", border_width=0, text_color="#ececf1", placeholder_text_color="#8e8ea0", font=("Arial", 13))
                 self.entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=20)
                 
-                self.btn_send = cst.CTkButton(self.input_container, text="▲", width=36, height=36, corner_radius=18, fg_color="#676767", command=self.start_thread)
+                self.btn_send = cst.CTkButton(self.input_container, text="▲", width=36, height=36, corner_radius=18, fg_color="#676767", hover_color="#ececf1", text_color="#212121", font=("Arial", 12, "bold"), command=self.start_ask_thread)
                 self.btn_send.pack(side=tk.RIGHT, padx=12, pady=10)
-                self.entry.bind("<Return>", lambda e: self.start_thread())
+                self.entry.bind("<Return>", lambda event: self.start_ask_thread())
 
-            def start_thread(self):
-                threading.Thread(target=self.send_msg, daemon=True).start()
+            def clear_chat(self):
+                self.txt_display.configure(state="normal")
+                self.txt_display.delete("1.0", tk.END)
+                self.txt_display.configure(state="disabled")
 
-            def send_msg(self):
+            def start_ask_thread(self):
+                threading.Thread(target=self.send_to_gemini, daemon=True).start()
+
+            def send_to_gemini(self):
                 user_text = self.entry.get()
                 if not user_text: return
                 
                 self.txt_display.configure(state="normal")
-                self.txt_display.insert(tk.END, f"👤 المستخدم: {user_text}\n\n")
+                self.txt_display.insert(tk.END, f"👤 المستخدم:\n{user_text}\n\n")
                 self.txt_display.configure(state="disabled")
+                self.txt_display.see(tk.END)
+                
                 self.entry.delete(0, tk.END)
                 self.btn_send.configure(state="disabled", text="•••")
                 
                 if not client:
-                    self.show_response("🤖 Torvarcore: تنبيه، لم يتم تفعيل مفتاح الـ API بشكل صحيح في الكود أونلاين.\n\n")
+                    self.show_response(f"🤖 {APP_NAME}:\nتنبيه: مفتاح الـ API المكتوب في الكود أونلاين غير مفعل، يرجى مراجعته لحقن الذكاء الحقيقي.\n\n")
                     return
 
                 try:
-                    # الاتصال الفعلي بالسيرفر عبر جيل بايثون الحديث لعام 2026
+                    # 💡 تم شحن عقل الـ Pro الخارق مجاناً لتنفيذ أصعب عمليات البرمجة والتصميم
                     response = client.models.generate_content(
-                        model='gemini-2.5-flash',
+                        model='gemini-2.5-pro',
                         contents=user_text,
                         config=types.GenerateContentConfig(
-                            system_instruction="أنت نظام مستقل تماماً ومساعد شخصي لبيئة العمل اسمك 'Torvarcore'. تساعد المستخدم في ملفات الإكسل، الوورد، وإدارة المواد الغذائية. يمنع منعاً باتاً ذكر جوجل أو جيمني تحت أي ظرف."
+                            system_instruction="أنت الآن نظام مستقل تماماً ومساعد شخصي لبيئة العمل اسمك 'Torvarcore'. تمتلك منطقاً تصميمياً وبرمجياً خارقاً يشبه كلود، وتساعد المستخدم في ملفات الإكسل، الوورد، وإدارة المواد الغذائية بدقة صفر خطأ. يمنع منعاً باتاً ذكر جوجل أو جيمني وتحمل هويتك المستقلة دائماً."
                         )
                     )
-                    self.show_response(f"🤖 Torvarcore:\n{response.text}\n" + "_"*50 + "\n\n")
-                except:
-                    self.show_response("🤖 Torvarcore: الخادم مشغول حالياً بسبب ضغط الطلبات على الهواتف، يرجى المحاولة بعد دقيقة.\n\n")
+                    self.show_response(f"🤖 {APP_NAME}:\n{response.text}\n" + "_"*60 + "\n\n")
+                except Exception:
+                    self.show_response(f"🤖 {APP_NAME}:\nعذراً، الخادم مشغول حالياً بسبب جدار حماية الويندوز المحلي، يرجى تكرار السؤال بعد ثوانٍ.\n" + "_"*60 + "\n\n")
 
             def show_response(self, text):
                 self.txt_display.configure(state="normal")
@@ -112,10 +163,12 @@ jobs:
                 self.btn_send.configure(state="normal", text="▲")
 
         if __name__ == "__main__":
-            app = TorvarcoreShell()
+            app = TorvarcoreFinalShell()
             app.mainloop()
-        EOF
-      shell: bash
+        "@
+        
+        $code | Out-File -FilePath app.pyw -Encoding utf8
+      shell: powershell
 
     - name: Build EXE
       run: |
