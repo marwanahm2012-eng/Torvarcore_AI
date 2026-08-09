@@ -1,0 +1,44 @@
+name: Build Torvarcore
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install Tools
+      run: |
+        pip install customtkinter pillow google-genai pyinstaller
+
+    - name: Create App File
+      run: |
+        echo "import customtkinter as cst" > app.pyw
+        echo "import tkinter as tk" >> app.pyw
+        echo "app = cst.CTk()" >> app.pyw
+        echo "app.title('Torvarcore')" >> app.pyw
+        echo "app.attributes('-fullscreen', True)" >> app.pyw
+        echo "app.configure(fg_color='#212121')" >> app.pyw
+        echo "lbl = cst.CTkLabel(app, text='Torvarcore Custom Desktop', font=('Arial', 30, 'bold'))" >> app.pyw
+        echo "lbl.pack(pady=200)" >> app.pyw
+        echo "btn = cst.CTkButton(app, text='✕ Exit', command=app.destroy)" >> app.pyw
+        echo "btn.pack()" >> app.pyw
+        echo "app.mainloop()" >> app.pyw
+
+    - name: Build EXE
+      run: |
+        pyinstaller --noconsole --onefile app.pyw
+
+    - name: Upload EXE
+      uses: actions/upload-artifact@v4
+      with:
+        name: Torvarcore-Desktop
+        path: dist/app.exe
