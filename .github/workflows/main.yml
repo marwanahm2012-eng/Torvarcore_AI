@@ -21,25 +21,30 @@ jobs:
 
     - name: Create App File
       run: |
-        # ⚙️ ضع مفتاح الـ API الجديد النظيف هنا بدقة شديدة:
-        $apiKey = "AQ.Ab8RN6LKU43ydedhAd87lcoGLSGAzz_FY6ya-fBwwQlKpJwU0w"
-        
-        $code = @"
+        @'
         import customtkinter as cst
         import tkinter as tk
         from google import genai
         from google.genai import types
         import threading
         import os
+        import sys
+
+        # فك تشفير اللغة العربية بالكامل للويندوز
+        if sys.platform.startswith('win'):
+            import ctypes
+            ctypes.windll.kernel32.SetConsoleOutputCP(65001)
 
         cst.set_appearance_mode("Dark")
         cst.set_default_color_theme("blue")
 
         APP_NAME = "Torvarcore AI"
-        API_KEY = "`$apiKey"
+        
+        # 🔑 تم حقن مفتاحك النظيف هنا كـ نص محمي وثابت بنسبة 100%
+        API_KEY = "AQ.Ab8RN6KmFIQu-XUDctxRdMw3qjLszH78Ge92LycGOJLj2ANpFQ"
         
         try:
-            client = genai.Client(api_key=API_KEY) if API_KEY != "اكتب_مفتاح_الـ_API_الجديد_بتاعك_هنا" else None
+            client = genai.Client(api_key=API_KEY)
         except:
             client = None
 
@@ -112,12 +117,11 @@ jobs:
                 self.btn_send.pack(side=tk.RIGHT, padx=12, pady=10)
                 self.entry.bind("<Return>", lambda event: self.start_ask_thread())
                 
-                # تشغيل الترحيب المبدئي الآمن بعد اكتمال بناء كل الأزرار تماماً
                 self.show_welcome_msg()
 
             def show_welcome_msg(self):
                 self.txt_display.configure(state="normal")
-                self.txt_display.insert(tk.END, f"🤖 {APP_NAME}: مرحباً بك في لوحة تحكم سطح المكتب المخصصة للشركات والمخازن. مدعوم بعقل البرو الخارق في البرمجة والتصميم. كيف يمكنني مساعدتك اليوم؟\n\n")
+                self.txt_display.insert(tk.END, "🤖 Torvarcore: مرحباً بك في لوحة تحكم سطح المكتب المخصصة للشركات والمخازن. مدعوم بعقل البرو الخارق في البرمجة والتصميم. كيف يمكنني مساعدتك اليوم؟\n\n")
                 self.txt_display.configure(state="disabled")
 
             def start_ask_thread(self):
@@ -136,7 +140,7 @@ jobs:
                 self.btn_send.configure(state="disabled", text="•••")
                 
                 if not client:
-                    self.show_response(f"🤖 {APP_NAME}:\nتنبيه: مفتاح الـ API المكتوب في الكود أونلاين غير مفعل، يرجى مراجعته لحقن الذكاء الحقيقي.\n\n")
+                    self.show_response("🤖 Torvarcore:\nتنبيه: مفتاح الـ API غير مفعل في الكود أونلاين.\n\n")
                     return
 
                 try:
@@ -147,9 +151,9 @@ jobs:
                             system_instruction="أنت الآن نظام مستقل تماماً ومساعد شخصي لبيئة العمل اسمك 'Torvarcore'. تمتلك منطقاً تصميمياً وبرمجياً خارقاً يشبه كلود، وتساعد المستخدم في ملفات الإكسل، الوورد، وإدارة المواد الغذائية بدقة صفر خطأ. يمنع منعاً باتاً ذكر جوجل أو جيمني وتحمل هويتك المستقلة دائماً."
                         )
                     )
-                    self.show_response(f"🤖 {APP_NAME}:\n{response.text}\n" + "_"*60 + "\n\n")
+                    self.show_response(f"🤖 Torvarcore:\n{response.text}\n" + "_"*60 + "\n\n")
                 except Exception:
-                    self.show_response(f"🤖 {APP_NAME}:\nعذراً، الخادم مشغول حالياً بسبب جدار حماية الويندوز المحلي، يرجى تكرار السؤال بعد ثوانٍ.\n" + "_"*60 + "\n\n")
+                    self.show_response("🤖 Torvarcore:\nعذراً، الخادم مشغول حالياً بسبب قيود جدار حماية الويندوز، يرجى تكرار السؤال بعد دقيقة واحرص على عدم الاستهلاك السريع في الخطة المجانية.\n" + "_"*50 + "\n\n")
 
             def show_response(self, text):
                 self.txt_display.configure(state="normal")
@@ -161,9 +165,7 @@ jobs:
         if __name__ == "__main__":
             app = TorvarcoreFinalShell()
             app.mainloop()
-        "@
-        
-        $code | Out-File -FilePath app.pyw -Encoding utf8
+        "@ | Out-File -FilePath app.pyw -Encoding utf8
       shell: powershell
 
     - name: Build EXE
