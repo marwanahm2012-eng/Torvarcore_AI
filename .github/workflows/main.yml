@@ -21,17 +21,76 @@ jobs:
 
     - name: Create App File
       run: |
-        echo "import customtkinter as cst" > app.pyw
-        echo "import tkinter as tk" >> app.pyw
-        echo "app = cst.CTk()" >> app.pyw
-        echo "app.title('Torvarcore')" >> app.pyw
-        echo "app.attributes('-fullscreen', True)" >> app.pyw
-        echo "app.configure(fg_color='#212121')" >> app.pyw
-        echo "lbl = cst.CTkLabel(app, text='Torvarcore Custom Desktop', font=('Arial', 30, 'bold'))" >> app.pyw
-        echo "lbl.pack(pady=200)" >> app.pyw
-        echo "btn = cst.CTkButton(app, text='✕ Exit', command=app.destroy)" >> app.pyw
-        echo "btn.pack()" >> app.pyw
-        echo "app.mainloop()" >> app.pyw
+        cat << 'EOF' > app.pyw
+        import customtkinter as cst
+        import tkinter as tk
+        from google import genai
+        from google.genai import types
+        import threading
+
+        cst.set_appearance_mode("Dark")
+        cst.set_default_color_theme("blue")
+
+        API_KEY = "ضع_مفتاحك_هنا_لو_عايز"
+        try:
+            client = genai.Client(api_key=API_KEY) if "ضع" not in API_KEY else None
+        except:
+            client = None
+
+        class TorvarcoreShell(cst.CTk):
+            def __init__(self):
+                super().__init__()
+                self.title("Torvarcore AI")
+                self.attributes('-fullscreen', True)
+                self.configure(fg_color="#212121")
+                
+                # شريط علوي
+                self.top_bar = cst.CTkFrame(self, height=40, corner_radius=0, fg_color="#171717")
+                self.top_bar.pack(fill=tk.X, side=tk.TOP)
+                self.btn_close = cst.CTkButton(self.top_bar, text="✕ Exit", fg_color="#f38ba8", text_color="#11111b", width=80, command=self.destroy)
+                self.btn_close.pack(side=tk.RIGHT, padx=15, pady=6)
+                
+                # عنوان
+                self.lbl = cst.CTkLabel(self, text="Torvarcore AI Desktop", font=('Arial', 26, 'bold'), text_color="#ececf1")
+                self.lbl.pack(pady=20)
+                
+                # صندوق عرض الشات
+                self.txt_display = cst.CTkTextbox(self, fg_color="#212121", text_color="#ececf1", font=("Arial", 13), wrap="word")
+                self.txt_display.pack(fill=tk.BOTH, expand=True, padx=100, pady=10)
+                self.txt_display.insert(tk.END, "🤖 Torvarcore: أهلاً بك! أنا نظام سطح المكتب المخصص الخاص بك، كيف يمكنني مساعدتك اليوم؟\n\n")
+                self.txt_display.configure(state="disabled")
+                
+                # صندوق إدخال سفلي دائري كـ ChatGPT
+                self.input_container = cst.CTkFrame(self, fg_color="#2f2f2f", height=60, corner_radius=26, border_width=1, border_color="#4d4d4d")
+                self.input_container.pack(fill=tk.X, padx=100, pady=(10, 40))
+                self.input_container.pack_propagate(False)
+                
+                self.entry = cst.CTkEntry(self.input_container, placeholder_text="اكتب سؤالك هنا لـ Torvarcore...", fg_color="transparent", border_width=0, text_color="#ececf1")
+                self.entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=20)
+                
+                self.btn_send = cst.CTkButton(self.input_container, text="▲", width=36, height=36, corner_radius=18, fg_color="#676767", command=self.send_msg)
+                self.btn_send.pack(side=tk.RIGHT, padx=12, pady=10)
+                self.entry.bind("<Return>", lambda e: self.send_msg())
+
+            def send_msg(self):
+                user_text = self.entry.get()
+                if not user_text: return
+                self.txt_display.configure(state="normal")
+                self.txt_display.insert(tk.END, f"👤 المستخدم: {user_text}\n\n")
+                self.txt_display.configure(state="disabled")
+                self.entry.delete(0, tk.END)
+                
+                # رد سريع مؤقت لحين ربط الـ API الفعلي بالكامل
+                self.txt_display.configure(state="normal")
+                self.txt_display.insert(tk.END, f"🤖 Torvarcore: تم استقبال طلبك '{user_text}' بنجاح داخل نظام الواجهة المحترفة!\n" + "_"*50 + "\n\n")
+                self.txt_display.configure(state="disabled")
+                self.txt_display.see(tk.END)
+
+        if __name__ == "__main__":
+            app = TorvarcoreShell()
+            app.mainloop()
+        EOF
+      shell: bash
 
     - name: Build EXE
       run: |
